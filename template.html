@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Diagnostics</title>
+    <style>
+        :root {
+            --bg: #090d16;
+            --card-bg: #111827;
+            --text: #f3f4f6;
+            --text-muted: #9ca3af;
+            --primary: #6366f1;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --border: #1f2937;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        header {
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: var(--primary-glow);
+            color: #818cf8;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .ip-display {
+            font-family: monospace;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border: 1px dashed var(--border);
+            margin: 20px 0;
+            word-break: break-all;
+        }
+
+        .grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .value {
+            font-weight: 500;
+            font-size: 0.925rem;
+            text-align: right;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>IP & Connection Diagnostics</h1>
+            <span class="badge">Region Check Passed ({{country}})</span>
+        </header>
+
+        <div class="ip-display">{{ip}}</div>
+
+        <div class="grid">
+            <div class="item"><span class="label">ISP</span><span class="value" title="{{isp}}">{{isp}}</span></div>
+            <div class="item"><span class="label">ASN</span><span class="value">AS{{asn}}</span></div>
+            <div class="item"><span class="label">Location</span><span class="value">{{city}}, {{region}},
+                    {{country}}</span></div>
+            <div class="item"><span class="label">Timezone</span><span class="value">{{timezone}}</span></div>
+        </div>
+
+        <div class="footer">Append <a href="?json">?json</a> for API payload.</div>
+    </div>
+</body>
+
+</html>

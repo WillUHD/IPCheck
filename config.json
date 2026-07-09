@@ -1,0 +1,5 @@
+{
+    "defaultRegion": "us",
+    "timeoutSeconds": 10,
+    "simulateTimeoutMessage": "IP-bound timeout due to configuration"
+}
