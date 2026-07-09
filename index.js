@@ -6,30 +6,14 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // --- 1. SAFARI FAVICON INTERCEPTOR ---
-    // Safari automatically requests /favicon.ico. Serving it directly here fixes the caching bug.
-    if (pathname === '/favicon.ico') {
-      const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="%232563eb" stroke-width="2" stroke-opacity="0.15"/><circle cx="16" cy="16" r="8" stroke="%232563eb" stroke-width="2" stroke-opacity="0.4"/><circle cx="16" cy="16" r="3.5" fill="%232563eb"/></svg>`;
-      return new Response(svgIcon, {
-        headers: { 
-          'Content-Type': 'image/svg+xml',
-          'Cache-Control': 'public, max-age=86400' 
-        }
-      });
-    }
-
-    // --- 2. REGION-GATED LATENCY ENDPOINTS ---
-    // Only /generate_204 and /success enforce the regional timeout rules.
+    // --- 1. REGION-GATED LATENCY ENDPOINTS ---
+    // Uses your exact original array matching logic
     if (pathname === '/generate_204' || pathname === '/success') {
+      const regionParam = url.searchParams.get('region') || config.defaultRegion;
+      const allowedRegions = regionParam.toLowerCase().split(',').map(r => r.trim());
       const clientCountry = (request.cf?.country || config.defaultRegion).toLowerCase();
-      const regionParam = url.searchParams.get('region');
-      let isAllowed = false;
       
-      if (!regionParam) {
-        isAllowed = clientCountry === config.defaultRegion.toLowerCase();
-      } else {
-        isAllowed = regionParam.toLowerCase().split(',').some(r => r.trim() === clientCountry);
-      }
+      const isAllowed = allowedRegions.includes(clientCountry);
 
       if (!isAllowed) {
         const delayMs = Math.min(config.timeoutSeconds * 1000, 15000);
@@ -47,8 +31,7 @@ export default {
       return new Response(null, { status: 204 });
     }
 
-    // --- 3. PUBLIC DIAGNOSTICS & WEB PAGE (OPEN GLOBALLY) ---
-    // Anyone from any country can access this webpage or the ?json endpoint instantly.
+    // --- 2. PUBLIC DIAGNOSTICS & WEB PAGE (OPEN GLOBALLY) ---
     const ip = request.headers.get('CF-Connecting-IP') || 'Unknown';
     const city = request.cf?.city || 'Unknown';
     const region = request.cf?.region || 'Unknown';
