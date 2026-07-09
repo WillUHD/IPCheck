@@ -1,5 +1,5 @@
 {
-  "name": "IPCheck",
-  "main": "index.js",
-  "compatibility_date": "2026-07-09"
+    "name": "ipcheck",
+    "main": "index.js",
+    "compatibility_date": "2026-07-09"
 }
