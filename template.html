@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22none%22 stroke=%22currentColor%22 stroke-width=%2210%22/></svg>">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IP Check</title>
+  <!-- Force Safari and modern browsers to load the custom favicon endpoint -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico">
   <style>
     :root {
       --bg: #ffffff;
       --text: #111111;
       --text-muted: #666666;
       --border: #e1e1e1;
-      --accent: #0066cc;
+      --accent: #2563eb;
       --mono: ui-monospace, SFMono-Regular, SF Pro Text, Menlo, Monaco, Consolas, monospace;
     }
 
@@ -143,7 +144,7 @@
 
     <div class="list">
       <div class="row">
-        <span class="label">ISP</span>
+        <span class="label">ISP Network</span>
         <span class="value">{{isp}}</span>
       </div>
       <div class="row">
