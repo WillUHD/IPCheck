@@ -4,22 +4,29 @@ import htmlTemplate from "./template.html";
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    
-    // 1. Get the allowed regions. Fallback to default in config.json if not in query parameters.
-    const regionParam = url.searchParams.get('region') || config.defaultRegion;
-    const allowedRegions = regionParam.toLowerCase().split(',').map(r => r.trim());
+    const pathname = url.pathname;
 
-    // 2. Identify the proxy node's country
+    // --- OPTIMIZATION 1: Fast path checks before complex string handling ---
+    if (pathname === '/generate_204' || pathname === '/success') {
+      return new Response(null, { status: 204 });
+    }
+
+    // Identify client origin region safely
     const clientCountry = (request.cf?.country || config.defaultRegion).toLowerCase();
 
-    // 3. Evaluate access
-    const isAllowed = allowedRegions.includes(clientCountry);
+    // --- OPTIMIZATION 2: Lazy evaluation of custom regions to save CPU time ---
+    const regionParam = url.searchParams.get('region');
+    let isAllowed = false;
+    
+    if (!regionParam) {
+      isAllowed = clientCountry === config.defaultRegion.toLowerCase();
+    } else {
+      isAllowed = regionParam.toLowerCase().split(',').some(r => r.trim() === clientCountry);
+    }
 
     if (!isAllowed) {
-      // Convert configuration seconds to milliseconds
-      const delayMs = config.timeoutSeconds * 1000;
+      const delayMs = Math.min(config.timeoutSeconds * 1000, 15000); // Guard rails on timeout length
       
-      // Delay response to trigger client-side timeout
       if (typeof scheduler !== 'undefined' && scheduler.wait) {
         await scheduler.wait(delayMs); 
       } else {
@@ -29,45 +36,48 @@ export default {
       return new Response(config.simulateTimeoutMessage, { status: 504 });
     }
 
-    // --- ACCESS GRANTED ---
+    // --- ACCESS GRANTED & DIAGNOSTICS ASSEMBLED ---
 
-    // 4. Quick Latency check handler for Karing/Clash (HTTP 204)
-    if (url.pathname === '/generate_204' || url.pathname === '/success') {
-      return new Response(null, { status: 204 });
-    }
-
-    // 5. Gather diagnostic metrics
+    // Harvest passive network properties
     const ip = request.headers.get('CF-Connecting-IP') || 'Unknown';
     const city = request.cf?.city || 'Unknown';
     const region = request.cf?.region || 'Unknown';
-    const postalCode = request.cf?.postalCode || 'Unknown';
-    const latitude = request.cf?.latitude || 'Unknown';
-    const longitude = request.cf?.longitude || 'Unknown';
     const timezone = request.cf?.timezone || 'Unknown';
     const asn = request.cf?.asn || 'Unknown';
     const isp = request.cf?.asOrganization || 'Unknown';
-    const userAgent = request.headers.get('user-agent') || 'Unknown';
+    
+    // Additional zero-overhead networking components
+    const colo = request.cf?.colo || 'Unknown';
+    const httpProtocol = request.cf?.httpProtocol || 'Unknown';
+    const tlsVersion = request.cf?.tlsVersion || 'Unknown';
+    const clientTcpRtt = request.cf?.clientTcpRtt ? `${request.cf.clientTcpRtt} ms` : 'Unavailable';
+    const rayId = request.headers.get('cf-ray') || 'Unknown';
 
-    // 6. Handle API requested format
+    // JSON Diagnostic request output
     if (url.searchParams.has('json') || request.headers.get('accept')?.includes('application/json')) {
       const data = {
         ip,
         country: clientCountry.toUpperCase(),
         city,
         region,
-        postalCode,
-        location: { latitude, longitude },
         timezone,
         asn,
         isp,
-        userAgent
+        colo,
+        protocol: httpProtocol,
+        tlsVersion,
+        rtt: clientTcpRtt,
+        rayId
       };
       return new Response(JSON.stringify(data, null, 2), {
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Access-Control-Allow-Origin': '*' 
+        }
       });
     }
 
-    // 7. Inject variables into the HTML layout file and return it
+    // Inject parameters into responsive clean CSS layout
     const renderedHtml = htmlTemplate
       .replace(/{{ip}}/g, ip)
       .replace(/{{isp}}/g, isp)
@@ -75,7 +85,12 @@ export default {
       .replace(/{{city}}/g, city)
       .replace(/{{region}}/g, region)
       .replace(/{{country}}/g, clientCountry.toUpperCase())
-      .replace(/{{timezone}}/g, timezone);
+      .replace(/{{timezone}}/g, timezone)
+      .replace(/{{colo}}/g, colo)
+      .replace(/{{protocol}}/g, httpProtocol)
+      .replace(/{{tlsVersion}}/g, tlsVersion)
+      .replace(/{{rtt}}/g, clientTcpRtt)
+      .replace(/{{rayId}}/g, rayId);
 
     return new Response(renderedHtml, {
       headers: { 'Content-Type': 'text/html; charset=utf-8' }
